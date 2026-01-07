@@ -23,11 +23,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 转换消息格式为 DeepSeek API 格式
-    const apiMessages = messages.map((msg: { role: string; content: string }) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // 转换消息格式为 DeepSeek API 格式，确保类型正确
+    const apiMessages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = messages.map((msg: { role: string; content: string }) => {
+      // 确保 role 是有效的值
+      if (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system') {
+        throw new Error(`Invalid role: ${msg.role}`);
+      }
+      return {
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content,
+      };
+    });
 
     const response = await client.chat.completions.create({
       model: 'deepseek-chat',
