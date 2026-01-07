@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { 
+  ChatCompletionUserMessageParam,
+  ChatCompletionAssistantMessageParam,
+  ChatCompletionSystemMessageParam
+} from 'openai/resources/chat/completions';
 
 const apiKey = process.env.DEEPSEEK_API_KEY;
 
@@ -25,7 +29,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 转换消息格式为 DeepSeek API 格式，确保类型正确
-    const apiMessages: ChatCompletionMessageParam[] = messages.map((msg: { role: string; content: string }) => {
+    const apiMessages: Array<
+      ChatCompletionUserMessageParam | 
+      ChatCompletionAssistantMessageParam | 
+      ChatCompletionSystemMessageParam
+    > = messages.map((msg: { role: string; content: string }) => {
       // 确保 role 是有效的值
       if (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system') {
         throw new Error(`Invalid role: ${msg.role}`);
@@ -33,20 +41,23 @@ export async function POST(request: NextRequest) {
       
       // 根据 role 类型返回正确的消息格式
       if (msg.role === 'user') {
-        return {
+        const userMsg: ChatCompletionUserMessageParam = {
           role: 'user',
           content: msg.content,
-        } as ChatCompletionMessageParam;
+        };
+        return userMsg;
       } else if (msg.role === 'assistant') {
-        return {
+        const assistantMsg: ChatCompletionAssistantMessageParam = {
           role: 'assistant',
           content: msg.content,
-        } as ChatCompletionMessageParam;
+        };
+        return assistantMsg;
       } else {
-        return {
+        const systemMsg: ChatCompletionSystemMessageParam = {
           role: 'system',
           content: msg.content,
-        } as ChatCompletionMessageParam;
+        };
+        return systemMsg;
       }
     });
 
