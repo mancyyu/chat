@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 const apiKey = process.env.DEEPSEEK_API_KEY;
 
@@ -24,15 +25,29 @@ export async function POST(request: NextRequest) {
     }
 
     // 转换消息格式为 DeepSeek API 格式，确保类型正确
-    const apiMessages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = messages.map((msg: { role: string; content: string }) => {
+    const apiMessages: ChatCompletionMessageParam[] = messages.map((msg: { role: string; content: string }) => {
       // 确保 role 是有效的值
       if (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system') {
         throw new Error(`Invalid role: ${msg.role}`);
       }
-      return {
-        role: msg.role as 'user' | 'assistant' | 'system',
-        content: msg.content,
-      };
+      
+      // 根据 role 类型返回正确的消息格式
+      if (msg.role === 'user') {
+        return {
+          role: 'user',
+          content: msg.content,
+        } as ChatCompletionMessageParam;
+      } else if (msg.role === 'assistant') {
+        return {
+          role: 'assistant',
+          content: msg.content,
+        } as ChatCompletionMessageParam;
+      } else {
+        return {
+          role: 'system',
+          content: msg.content,
+        } as ChatCompletionMessageParam;
+      }
     });
 
     const response = await client.chat.completions.create({
